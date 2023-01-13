@@ -452,7 +452,7 @@ interface IPinkAntiBot {
   ) external;
 }
 
-contract BattleSquad_BSC is ERC20, Ownable, AccessControl, RouterCrossTalk {
+contract CrossChainBEP20 is ERC20, Ownable, AccessControl, RouterCrossTalk {
     uint256 private _crossChainGasLimit;
     uint256 private _crossChainGasPrice;
     using SafeMath for uint256;
@@ -588,11 +588,25 @@ contract BattleSquad_BSC is ERC20, Ownable, AccessControl, RouterCrossTalk {
     }
 
     function setbuyFee(uint256 value) external onlyOwner{
+        require(value.add(burnFeePercent)<=15,"sum cannot be greater than 15");
         buyFee = value;
     }
 
     function setsellFee(uint256 value) external onlyOwner{
+        require(value.add(burnFeePercent)<=15,"sum cannot be greater than 15");
         sellFee = value;
+    }
+
+    function settransferTax(uint256 value) external onlyOwner{
+        require(value.add(burnFeePercent)<=15,"sum cannot be greater than 15");
+        transferTax = value;
+    }
+
+    function setBurnpercent(uint256 value) external onlyOwner{
+        require(value.add(buyFee)<=15,"buy sum cannot be greater than 15");
+        require(value.add(sellFee)<=15,"sell sum cannot be greater than 15");
+        require(value.add(transferTax)<=15,"transfer sum cannot be greater than 15");  
+        burnFeePercent = value;
     }
 
     function setmaxtranscation(uint256 value) external onlyOwner{
@@ -740,8 +754,13 @@ contract BattleSquad_BSC is ERC20, Ownable, AccessControl, RouterCrossTalk {
         	}
             if(transferFeeEnabled)
             {
-                transferFees += amount.mul(transferTax).div(100);
-                bFee += amount.mul(burnFeePercent).div(100);
+                if(!automatedMarketMakerPairs[from] && !automatedMarketMakerPairs[to])
+                {
+
+                    transferFees += amount.mul(transferTax).div(100);
+                    bFee += amount.mul(burnFeePercent).div(100);
+
+                }
             }
 
             amount = amount.sub(fees).sub(bFee).sub(transferFees);
